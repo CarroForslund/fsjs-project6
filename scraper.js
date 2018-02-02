@@ -70,6 +70,7 @@ scrapeIt(sitePath, {
           console.error('An error occured', err);
         }
         else {
+          //Product details
           console.log('Price: ', data.page[0].price);
           console.log('Title: ', data.page[0].title);
           console.log('Url: ', pagePath);
@@ -78,4 +79,10 @@ scrapeIt(sitePath, {
       })
     }
   }
-})
+});
+
+//Save products with details to CSV (Comma-separated values) file
+//CSV file named by date, e.g. 2016-11-21.csv
+//The column headers in the CSV need to be in a certain order to be correctly entered into a database.
+  //They should be in this order: Title, Price, ImageURL, URL, and Time
+//CSV file saved in data folder

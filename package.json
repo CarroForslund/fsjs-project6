@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/CarroForslund/fsjs-project6#readme",
   "dependencies": {
+    "json2csv": "^3.11.5",
     "scrape-it": "^5.0.2"
   }
 }
