@@ -10,7 +10,6 @@ const sitePath = 'http://shirts4mike.com/';//Path to website to scrape
 const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
 const tShirts = [];
 
-
 // Check if data folder exists. If not, create data folder =====================
 if (!fs.existsSync(dataDirPath)) {
   console.log('no data folder found');
@@ -39,19 +38,10 @@ scrapeIt(sitePath + 'shirts.php', {
       }
     }
   }
-}).then(({ data, response }) => {
+}).then( ({ data, response }) => {
     // console.log(`Status Code: ${response.statusCode}`)
     // console.log(data)
     const pages = data.pages;
-    console.log('Pages length', pages.length);
-
-    //Time variables to be able to set fileName
-    const time = new Date();
-    const year = time.getFullYear();
-    const month = addZero(time.getMonth()+1);
-    const day = addZero(time.getDate());
-    //File will be named by current date
-    const fileName = `${year}-${month}-${day}`;
 
     // Get specific t-shirt data from each page
     for (const page of pages){
@@ -72,41 +62,39 @@ scrapeIt(sitePath + 'shirts.php', {
           }
         }
       }).then(({ data , response }) => {
-        //Get current time
+        //Current time
         const time = new Date();
         const hour = time.getHours();
         const min = time.getMinutes();
         const sec = time.getSeconds();
-
-        const page = data.page[0];
-
-        console.log('Title', page.title);
-        console.log('Price', page.price);
-        console.log('Img', page.img);
-        console.log('Url', pagePath);
-        console.log('Time', `${hour}:${min}:${sec}`);
-
-        //T-shirt details saved in a json object
-        const tShirt = {
-          "Title"   : `"${page.title}"`,
-          "Price"   : `"${page.price}"`,
-          "ImageURL": `"${page.img}"`,
-          "URL"     : `"${pagePath}"`,
-          "Time"    : `${hour}:${min}:${sec}`,
-        };
+        //T-shirt details
+        const tShirt = data.page[0];
+        tShirt.title = tShirt.title;
+        tShirt.price = tShirt.price;
+        tShirt.img = tShirt.img;
+        tShirt.url = pagePath;
+        tShirt.time = `${hour}:${min}:${sec}`;
+        // console.log(tShirt);
 
         //Add this t-shirt object to array
         tShirts.push(tShirt);
       });
     } //For loop ends
 }).then( () => {
-  // console.log(tShirts);
-  // var csv = json2csv({ data: tShirts, fields: columnHeaders });
-  //
-  // fs.writeFile('./data/file.csv', csv, function(err) {
-  //   if (err) throw err;
-  //   console.log('file saved');
-  // });
+  //Time variables to be able to set fileName
+  const time = new Date();
+  const year = time.getFullYear();
+  const month = addZero(time.getMonth()+1);
+  const day = addZero(time.getDate());
+  //File will be named by current date
+  const fileName = `${year}-${month}-${day}`;
+
+  var csv = json2csv({ data: tShirts, fields: columnHeaders });
+
+  fs.writeFile(`./data/${fileName}.csv`, csv, function(err) {
+    if (err) throw err;
+    console.log('file saved');
+  });
 });
 
 
