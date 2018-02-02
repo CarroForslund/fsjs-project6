@@ -1,7 +1,14 @@
-const fs = require('fs');                     //Require the fs module (which provides an API) to be able to interact with the file system
-const scrapeIt = require("scrape-it");        //Require Scrape It to be able to scrape website for t-shirt information
-const dataDirPath = './data';                 //Path to data folder
+/*jshint esversion: 6 */
+'use strict';
+
+const fs = require('fs');                  //Require the fs module (which provides an API) to be able to interact with the file system
+const scrapeIt = require("scrape-it");     //Require Scrape It to be able to scrape website for t-shirt information
+const json2csv = require('json2csv');      //Require json2csv to be able to save scraped data to CSV file
+const dataDirPath = './data';              //Path to data folder
 const sitePath = 'http://shirts4mike.com/';//Path to website to scrape
+
+const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
+const tShirts = [];
 
 
 // Check if data folder exists. If not, create data folder =====================
@@ -42,14 +49,21 @@ scrapeIt(sitePath, {
   else {
     // console.log(data);
     const pages = data.pages;
+    const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
+    const tShirts = [];
+    //Time variables to be able to set fileName
+    const time = new Date();
+    const year = time.getFullYear();
+    const month = addZero(time.getMonth()+1);
+    const day = addZero(time.getDate());
+    //File will be named by current date
+    const fileName = `${year}-${month}-${day}`;
 
+    // Get specific t-shirt data from each page
     for (const page of pages){
       const pagePath = sitePath + page.url;
-      console.log(pagePath);
 
-      // Fetch the list items on the specific page
       scrapeIt(pagePath, {
-
         page: {
           listItem: '.page',
           data: {
@@ -70,19 +84,62 @@ scrapeIt(sitePath, {
           console.error('An error occured', err);
         }
         else {
-          //Product details
-          console.log('Price: ', data.page[0].price);
-          console.log('Title: ', data.page[0].title);
-          console.log('Url: ', pagePath);
-          console.log('Img url: ', data.page[0].img);
+          //Get current time
+          const time = new Date();
+          const hour = time.getHours();
+          const min = time.getMinutes();
+          const sec = time.getSeconds();
+
+          // console.log('Title: ', data.page[0].title);
+          // console.log('Price: ', data.page[0].price);
+          // console.log('Url: ', pagePath);
+          // console.log('Img url: ', data.page[0].img);
+          // console.log('Time: ', hour + ":" + min + ":" + sec);
+
+          //T-shirt details saved in a json object
+          const tShirt = {
+            "Title"   : '"'+ data.page[0].title +'"',
+            "Price"   : '"'+ data.page[0].price +'"',
+            "ImageURL": '"'+ data.page[0].img +'"',
+            "URL"     : '"'+ pagePath +'"',
+            "Time"    : '"'+ hour + ":" + min + ":" + sec +'"',
+          };
+
+          //Add this t-shirt object to array
+          tShirts.push(tShirt);
+          console.log(tShirts);
         }
-      })
-    }
+      });
+    } //For loop ends
+
+
+    // var csv = json2csv({ data: tshirts, fields: columnHeaders });
+    //
+    // fs.writeFile('./data/file.csv', csv, function(err) {
+    //   if (err) throw err;
+    //   console.log('file saved');
+    // });
   }
 });
+
+
+
 
 //Save products with details to CSV (Comma-separated values) file
 //CSV file named by date, e.g. 2016-11-21.csv
 //The column headers in the CSV need to be in a certain order to be correctly entered into a database.
   //They should be in this order: Title, Price, ImageURL, URL, and Time
 //CSV file saved in data folder
+
+
+// HELPERS =====================================================================
+function addZero(date){
+  let result;
+  if (date < 10){
+    result = '0'+date
+  }
+  else {
+    result = date;
+  }
+  return result;
+}
