@@ -64,38 +64,35 @@ scrapeIt(sitePath + 'shirts.php', {
       }).then(({ data , response }) => {
         //Current time
         const time = new Date();
+        const year = time.getFullYear();
+        const month = addZero(time.getMonth()+1);
+        const day = addZero(time.getDate());
         const hour = time.getHours();
         const min = time.getMinutes();
         const sec = time.getSeconds();
-        //T-shirt details
-        const tShirt = data.page[0];
-        tShirt.title = tShirt.title;
-        tShirt.price = tShirt.price;
-        tShirt.img = tShirt.img;
-        tShirt.url = pagePath;
-        tShirt.time = `${hour}:${min}:${sec}`;
-        // console.log(tShirt);
+        const fileName = `${year}-${month}-${day}`; //File will be named by current date
+
+        // T-shirt object with product details
+        const tShirt = {
+          Title   : data.page[0].title,
+          Price   : data.page[0].price,
+          ImageURL: data.page[0].img,
+          URL     : pagePath,
+          Time    : `${hour}:${min}:${sec}`,
+        };
 
         //Add this t-shirt object to array
         tShirts.push(tShirt);
+
+        var csv = json2csv({ data: tShirts, fields: columnHeaders });
+
+        fs.writeFile(`./data/${fileName}.csv`, csv, function(err) {
+          if (err) throw err;
+          console.log('file saved');
+        });
       });
     } //For loop ends
-}).then( () => {
-  //Time variables to be able to set fileName
-  const time = new Date();
-  const year = time.getFullYear();
-  const month = addZero(time.getMonth()+1);
-  const day = addZero(time.getDate());
-  //File will be named by current date
-  const fileName = `${year}-${month}-${day}`;
-
-  var csv = json2csv({ data: tShirts, fields: columnHeaders });
-
-  fs.writeFile(`./data/${fileName}.csv`, csv, function(err) {
-    if (err) throw err;
-    console.log('file saved');
-  });
-});
+})
 
 
 //Save products with details to CSV (Comma-separated values) file
