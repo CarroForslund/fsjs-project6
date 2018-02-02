@@ -27,9 +27,8 @@ else {
   console.log('data folder found');
 }
 
-// The scraper gets the price, title, url and image url from the product page
-// Callback interface: scrapeIt( url, options, callback )
-scrapeIt(sitePath, {
+// Scrape site with Promise interface
+scrapeIt(sitePath + 'shirts.php', {
   // Fetch the list items on the start page
   pages: {
     listItem: 'ul.products li',
@@ -40,17 +39,12 @@ scrapeIt(sitePath, {
       }
     }
   }
-}, (err, { data }) => {
-  // const errorMessage = `There’s been a 404 error. Cannot connect to ${sitePath}`;
-  // console.log(err || data);
-  if(err){
-    console.error(`There’s been a 404 error. Cannot connect to ${sitePath}`);
-  }
-  else {
-    // console.log(data);
+}).then(({ data, response }) => {
+    // console.log(`Status Code: ${response.statusCode}`)
+    // console.log(data)
     const pages = data.pages;
-    const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
-    const tShirts = [];
+    console.log('Pages length', pages.length);
+
     //Time variables to be able to set fileName
     const time = new Date();
     const year = time.getFullYear();
@@ -62,7 +56,6 @@ scrapeIt(sitePath, {
     // Get specific t-shirt data from each page
     for (const page of pages){
       const pagePath = sitePath + page.url;
-
       scrapeIt(pagePath, {
         page: {
           listItem: '.page',
@@ -78,51 +71,43 @@ scrapeIt(sitePath, {
             }
           }
         }
-      }, (err, {data}) => {
-        // console.log(err || data.page)
-        if(err){
-          console.error('An error occured', err);
-        }
-        else {
-          //Get current time
-          const time = new Date();
-          const hour = time.getHours();
-          const min = time.getMinutes();
-          const sec = time.getSeconds();
+      }).then(({ data , response }) => {
+        //Get current time
+        const time = new Date();
+        const hour = time.getHours();
+        const min = time.getMinutes();
+        const sec = time.getSeconds();
 
-          // console.log('Title: ', data.page[0].title);
-          // console.log('Price: ', data.page[0].price);
-          // console.log('Url: ', pagePath);
-          // console.log('Img url: ', data.page[0].img);
-          // console.log('Time: ', hour + ":" + min + ":" + sec);
+        const page = data.page[0];
 
-          //T-shirt details saved in a json object
-          const tShirt = {
-            "Title"   : '"'+ data.page[0].title +'"',
-            "Price"   : '"'+ data.page[0].price +'"',
-            "ImageURL": '"'+ data.page[0].img +'"',
-            "URL"     : '"'+ pagePath +'"',
-            "Time"    : '"'+ hour + ":" + min + ":" + sec +'"',
-          };
+        console.log('Title', page.title);
+        console.log('Price', page.price);
+        console.log('Img', page.img);
+        console.log('Url', pagePath);
+        console.log('Time', `${hour}:${min}:${sec}`);
 
-          //Add this t-shirt object to array
-          tShirts.push(tShirt);
-          console.log(tShirts);
-        }
+        //T-shirt details saved in a json object
+        const tShirt = {
+          "Title"   : `"${page.title}"`,
+          "Price"   : `"${page.price}"`,
+          "ImageURL": `"${page.img}"`,
+          "URL"     : `"${pagePath}"`,
+          "Time"    : `${hour}:${min}:${sec}`,
+        };
+
+        //Add this t-shirt object to array
+        tShirts.push(tShirt);
       });
     } //For loop ends
-
-
-    // var csv = json2csv({ data: tshirts, fields: columnHeaders });
-    //
-    // fs.writeFile('./data/file.csv', csv, function(err) {
-    //   if (err) throw err;
-    //   console.log('file saved');
-    // });
-  }
+}).then( () => {
+  // console.log(tShirts);
+  // var csv = json2csv({ data: tShirts, fields: columnHeaders });
+  //
+  // fs.writeFile('./data/file.csv', csv, function(err) {
+  //   if (err) throw err;
+  //   console.log('file saved');
+  // });
 });
-
-
 
 
 //Save products with details to CSV (Comma-separated values) file
@@ -143,3 +128,101 @@ function addZero(date){
   }
   return result;
 }
+
+
+
+
+// // The scraper gets the price, title, url and image url from the product page
+// // Callback interface: scrapeIt( url, options, callback )
+// scrapeIt(sitePath, {
+//   // Fetch the list items on the start page
+//   pages: {
+//     listItem: 'ul.products li',
+//     data: {
+//       url: {
+//         selector: 'a',
+//         attr: 'href'
+//       },
+//       price: 'span',
+//       title: {
+//         selector: 'img',
+//         attr: 'alt',
+//       },
+//       img: {
+//         selector: 'img',
+//         attr: 'src'
+//       }
+//     }
+//   }
+// }, (err, { data }) => {
+//   // const errorMessage = `There’s been a 404 error. Cannot connect to ${sitePath}`;
+//   // console.log(err || data);
+//   if(err){
+//     console.error(`There’s been a 404 error. Cannot connect to ${sitePath}`);
+//   }
+//   else {
+//     // console.log(data);
+//     const pages = data.pages;
+//     const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
+//     const tShirts = [];
+//     //Time variables to be able to set fileName
+//     const time = new Date();
+//     const year = time.getFullYear();
+//     const month = addZero(time.getMonth()+1);
+//     const day = addZero(time.getDate());
+//     //File will be named by current date
+//     const fileName = `${year}-${month}-${day}`;
+//
+//     // Get specific t-shirt data from each page
+//     for (const page of pages){
+//       const pagePath = sitePath + page.url;
+//
+//       scrapeIt(pagePath, {
+//         page: {
+//           listItem: '.page',
+//           data: {
+//             price: 'span',
+//             title: {
+//               selector: 'img',
+//               attr: 'alt',
+//             },
+//             img: {
+//               selector: 'img',
+//               attr: 'src'
+//             }
+//           }
+//         }
+//       }, (err, {data}) => {
+//         // console.log(err || data.page)
+//         if(err){
+//           console.error('An error occured', err);
+//         }
+//         else {
+//           //Get current time
+//           const time = new Date();
+//           const hour = time.getHours();
+//           const min = time.getMinutes();
+//           const sec = time.getSeconds();
+//
+//           const page = data.page[0];
+//
+//           //T-shirt details saved in a json object
+//           const tShirt = {
+//             "Title"   : `"${page.title}"`,
+//             "Price"   : `"${page.price}"`,
+//             "ImageURL": `"${page.img}"`,
+//             "URL"     : `"${pagePath}"`,
+//             "Time"    : `${hour}:${min}:${sec}`,
+//           };
+//
+//           //Add this t-shirt object to array
+//           tShirts.push(tShirt);
+//           // if (requests >= 8){
+//           //   console.log('time to write file with', tShirts);
+//           // }
+//
+//         }
+//       });
+//     } //For loop ends
+//   }
+// });
