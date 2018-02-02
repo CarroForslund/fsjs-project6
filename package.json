@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/CarroForslund/fsjs-project6/issues"
   },
-  "homepage": "https://github.com/CarroForslund/fsjs-project6#readme"
+  "homepage": "https://github.com/CarroForslund/fsjs-project6#readme",
+  "dependencies": {
+    "scrape-it": "^5.0.2"
+  }
 }
