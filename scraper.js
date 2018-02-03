@@ -1,6 +1,8 @@
 /*jshint esversion: 6 */
+/*jshint node: true */
 'use strict';
 
+// VARIABLES ===================================================================
 const fs = require('fs');                  //Require the fs module (which provides an API) to be able to interact with the file system
 const scrapeIt = require("scrape-it");     //Require Scrape It to be able to scrape website for t-shirt information
 const json2csv = require('json2csv');      //Require json2csv to be able to save scraped data to CSV file
@@ -10,103 +12,120 @@ const sitePath = 'http://shirts4mike.com/';//Path to website to scrape
 const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
 const tShirts = [];
 
-// Check if data folder exists. If not, create data folder =====================
-if (!fs.existsSync(dataDirPath)) {
-  console.log('no data folder found');
-  fs.mkdir(dataDirPath, (error) => {
-    if(error){
-      console.log('failed to create directory', error);
-    }
-    else {
-      console.log('successfully created directory');
-    }
-  });
+// DATA DIRECTORY ==============================================================
+
+// Check if data folder exists. If not, create data folder
+function checkDataDir(){
+  if (!fs.existsSync(dataDirPath)) {
+    console.log('no data folder found');
+    fs.mkdir(dataDirPath, (error) => {
+      if(error){
+        console.log('failed to create directory', error);
+      }
+      else {
+        console.log('successfully created directory');
+      }
+    });
+  }
+  else {
+    console.log('data folder found');
+  }
 }
-else {
-  console.log('data folder found');
-}
+
+// SCRAPE DATA =================================================================
 
 // Scrape site with Promise interface
-scrapeIt(sitePath + 'shirts.php', {
-  // Fetch the list items on the start page
-  pages: {
-    listItem: 'ul.products li',
-    data: {
-      url: {
-        selector: 'a',
-        attr: 'href'
+function scrapeSiteForPages(){
+
+  scrapeIt(sitePath + 'shirts.php', {
+    // Fetch the list items on the start page
+    pages: {
+      listItem: 'ul.products li',
+      data: {
+        url: {
+          selector: 'a',
+          attr: 'href'
+        }
       }
     }
-  }
-}).then( ({ data, response }) => {
-    // console.log(`Status Code: ${response.statusCode}`)
-    // console.log(data)
+  }).then(({ data, response }) => {
+    // console.log(`Status Code: ${response.statusCode}`);
+    // console.log(data);
     const pages = data.pages;
+    scrapePagesForTshirtData(pages);
+  }).catch( (error) => {
+    console.error(`Oops! Cannot connect to ${sitePath}.`);
+  });
+}
 
-    // Get specific t-shirt data from each page
-    for (const page of pages){
-      const pagePath = sitePath + page.url;
-      scrapeIt(pagePath, {
-        page: {
-          listItem: '.page',
-          data: {
-            price: 'span',
-            title: {
-              selector: 'img',
-              attr: 'alt',
-            },
-            img: {
-              selector: 'img',
-              attr: 'src'
-            }
+function scrapePagesForTshirtData(pages){
+  // Get specific t-shirt data from each page
+  for (const page of pages){
+    const pagePath = sitePath + page.url;
+    scrapeIt(pagePath, {
+      page: {
+        listItem: '.page',
+        data: {
+          price: 'span',
+          title: {
+            selector: 'img',
+            attr: 'alt',
+          },
+          img: {
+            selector: 'img',
+            attr: 'src'
           }
         }
-      }).then(({ data , response }) => {
-        //Current time
-        const time = new Date();
-        const year = time.getFullYear();
-        const month = addZero(time.getMonth()+1);
-        const day = addZero(time.getDate());
-        const hour = time.getHours();
-        const min = time.getMinutes();
-        const sec = time.getSeconds();
-        const fileName = `${year}-${month}-${day}`; //File will be named by current date
+      }
+    }).then(({ data , response }) => {
+      //Current time
+      const time = new Date();
+      const hour = addZero(time.getHours());
+      const min = addZero(time.getMinutes());
+      const sec = addZero(time.getSeconds());
 
-        // T-shirt object with product details
-        const tShirt = {
-          Title   : data.page[0].title,
-          Price   : data.page[0].price,
-          ImageURL: data.page[0].img,
-          URL     : pagePath,
-          Time    : `${hour}:${min}:${sec}`,
-        };
+      // T-shirt object with product details
+      const tShirt = {
+        Title   : data.page[0].title,
+        Price   : data.page[0].price,
+        ImageURL: data.page[0].img,
+        URL     : pagePath,
+        Time    : `${hour}:${min}:${sec}`,
+      };
 
-        //Add this t-shirt object to array
-        tShirts.push(tShirt);
+      //Add this t-shirt object to array
+      tShirts.push(tShirt);
+      writeDataToFile(tShirts);
+    }).catch( (error) => {
+      console.error(`There's been an error.`, error);
+    });
 
-        var csv = json2csv({ data: tShirts, fields: columnHeaders });
+  } //For loop ends
 
-        fs.writeFile(`./data/${fileName}.csv`, csv, function(err) {
-          if (err) throw err;
-          console.log('file saved');
-        });
-      });
-    } //For loop ends
-})
+}
 
+function writeDataToFile(){
+  const time = new Date();
+  const year = time.getFullYear();
+  const month = addZero(time.getMonth()+1);
+  const day = addZero(time.getDate());
+  const fileName = `${year}-${month}-${day}`; //File will be named by current date
 
-//Save products with details to CSV (Comma-separated values) file
-//CSV file named by date, e.g. 2016-11-21.csv
-//The column headers in the CSV need to be in a certain order to be correctly entered into a database.
-  //They should be in this order: Title, Price, ImageURL, URL, and Time
-//CSV file saved in data folder
+  var csv = json2csv({ data: tShirts, fields: columnHeaders });
 
+  fs.writeFile(`./data/${fileName}.csv`, csv, function(err) {
+    if (err) throw err;
+    console.log('file saved');
+  });
+}
 
 // HELPERS =====================================================================
+
+//Add a zero in fron of date/time if less than 10
 function addZero(date){
   let result;
   if (date < 10){
-    result = '0'+date
+    result = '0'+date;
   }
   else {
     result = date;
@@ -114,10 +133,15 @@ function addZero(date){
   return result;
 }
 
+// RUN APP =====================================================================
+function run(){
+  checkDataDir();
+  scrapeSiteForPages();
+  // writeDataToFile();
+}
 
+run();
 
-
-// // The scraper gets the price, title, url and image url from the product page
 // // Callback interface: scrapeIt( url, options, callback )
 // scrapeIt(sitePath, {
 //   // Fetch the list items on the start page
