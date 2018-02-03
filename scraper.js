@@ -54,7 +54,9 @@ function scrapeSiteForPages(){
     const pages = data.pages;
     scrapePagesForTshirtData(pages);
   }).catch( (error) => {
-    console.error(`Oops! Cannot connect to ${sitePath}.`);
+    const errorMsg = `Cannot connect to ${sitePath}`;
+    writeErrorLog(errorMsg);
+    // console.error(errorMsg);
   });
 }
 
@@ -97,6 +99,7 @@ function scrapePagesForTshirtData(pages){
       tShirts.push(tShirt);
       writeDataToFile(tShirts);
     }).catch( (error) => {
+      writeErrorLog(error);
       console.error(`There's been an error.`, error);
     });
 
@@ -108,8 +111,8 @@ function writeDataToFile(){
   const time = new Date();
   const year = time.getFullYear();
   const month = addZero(time.getMonth()+1);
-  const day = addZero(time.getDate());
-  const fileName = `${year}-${month}-${day}`; //File will be named by current date
+  const date = addZero(time.getDate());
+  const fileName = `${year}-${month}-${date}`; //File will be named by current date
 
   var csv = json2csv({ data: tShirts, fields: columnHeaders });
 
@@ -117,6 +120,27 @@ function writeDataToFile(){
     if (err) throw err;
     console.log('file saved');
   });
+}
+
+function writeErrorLog(errorMsg){
+
+  const time = new Date();
+  const year = time.getYear();
+  const month = time.getMonth();
+  const date = time.getDate();
+  const hour = addZero(time.getHours());
+  const min = addZero(time.getMinutes());
+  const sec = addZero(time.getSeconds());
+  const timestamp = new Date(year, month, date, hour, min, sec);
+
+  try {
+    //Create error log if not existing. If it exists, add log message to the end of the file
+    fs.appendFileSync('scraper-error.log', `${timestamp} ${errorMsg}\n`);
+    console.log('Error message was successfully saved in scraper-error.log');
+  }
+  catch (error) {
+    console.log(`Couldn't save error message to log-file`);
+  }
 }
 
 // HELPERS =====================================================================
