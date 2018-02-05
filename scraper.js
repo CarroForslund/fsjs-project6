@@ -9,8 +9,8 @@ const json2csv = require('json2csv');      //Require json2csv to be able to save
 const dataDirPath = './data';              //Path to data folder
 const sitePath = 'http://shirts4mike.com/';//Path to website to scrape
 
-const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
 const tShirts = [];
+let pages;
 
 // DATA DIRECTORY ==============================================================
 
@@ -35,10 +35,11 @@ function checkDataDir(){
 // SCRAPE DATA =================================================================
 
 // Scrape site with Promise interface
+// Fetch the list items on the start page
 function scrapeSite(){
 
   scrapeIt(sitePath + 'shirts.php', {
-    // Fetch the list items on the start page
+
     pages: {
       listItem: 'ul.products li',
       data: {
@@ -49,22 +50,23 @@ function scrapeSite(){
       }
     }
   }).then(({ data, response }) => {
-    // console.log(`Status Code: ${response.statusCode}`);
-    // console.log(data);
-    const pages = data.pages;
+
+    pages = data.pages;
     scrapePages(pages);
 
   }).catch( (error) => {
     const errorMsg = `Cannot connect to ${sitePath}`;
     writeErrorLog(errorMsg);
-    // console.error(errorMsg);
   });
 }
 
+// Get specific t-shirt data from each page
 function scrapePages(pages){
-  // Get specific t-shirt data from each page
+
   for (const page of pages){
+
     const pagePath = sitePath + page.url;
+
     scrapeIt(pagePath, {
       page: {
         listItem: '.page',
@@ -80,7 +82,9 @@ function scrapePages(pages){
           }
         }
       }
+
     }).then(({ data , response }) => {
+
       //Current time
       const time = new Date();
       const hour = addZero(time.getHours());
@@ -98,7 +102,11 @@ function scrapePages(pages){
 
       //Add this t-shirt object to array
       tShirts.push(tShirt);
-      writeDataToFile(tShirts);
+
+      //If all data has been scraped, write result to file
+      if (tShirts.length === pages.length){
+        writeDataToFile(tShirts);
+      }
 
     }).catch( (error) => {
       writeErrorLog(error);
@@ -116,19 +124,23 @@ function writeDataToFile(tShirts){
   const month = addZero(time.getMonth()+1);
   const date = addZero(time.getDate());
   const fileName = `${year}-${month}-${date}`; //File will be named by current date
-
-  var csv = json2csv({ data: tShirts, fields: columnHeaders });
+  const columnHeaders = [ 'Title', 'Price', 'ImageURL', 'URL', 'Time' ];
+  const csv = json2csv({ data: tShirts, fields: columnHeaders });
 
   fs.writeFile(`./data/${fileName}.csv`, csv, function(err) {
-    if (err) throw err;
-    console.log('file saved');
+    if (err) {
+      writeErrorLog(`There was an error saving data to ./data/${fileName}.csv`);
+    }
+    else {
+      console.log(`Data successfully saved to ./data/${fileName}.csv`);
+    }
+
   });
 }
 
 // WRITE ERROR LOG =============================================================
 
 function writeErrorLog(errorMsg){
-
   const time = new Date();
   const year = time.getYear();
   const month = time.getMonth();
@@ -166,7 +178,6 @@ function addZero(date){
 function run(){
   checkDataDir();
   scrapeSite();
-  // writeDataToFile(tShirts);
 }
 
 run();
