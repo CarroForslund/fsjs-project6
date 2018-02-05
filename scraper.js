@@ -35,7 +35,7 @@ function checkDataDir(){
 // SCRAPE DATA =================================================================
 
 // Scrape site with Promise interface
-function scrapeSiteForPages(){
+function scrapeSite(){
 
   scrapeIt(sitePath + 'shirts.php', {
     // Fetch the list items on the start page
@@ -52,7 +52,8 @@ function scrapeSiteForPages(){
     // console.log(`Status Code: ${response.statusCode}`);
     // console.log(data);
     const pages = data.pages;
-    scrapePagesForTshirtData(pages);
+    scrapePages(pages);
+
   }).catch( (error) => {
     const errorMsg = `Cannot connect to ${sitePath}`;
     writeErrorLog(errorMsg);
@@ -60,7 +61,7 @@ function scrapeSiteForPages(){
   });
 }
 
-function scrapePagesForTshirtData(pages){
+function scrapePages(pages){
   // Get specific t-shirt data from each page
   for (const page of pages){
     const pagePath = sitePath + page.url;
@@ -98,6 +99,7 @@ function scrapePagesForTshirtData(pages){
       //Add this t-shirt object to array
       tShirts.push(tShirt);
       writeDataToFile(tShirts);
+
     }).catch( (error) => {
       writeErrorLog(error);
       console.error(`There's been an error.`, error);
@@ -107,7 +109,8 @@ function scrapePagesForTshirtData(pages){
 
 }
 
-function writeDataToFile(){
+// SAVE DATA TO FILE ===========================================================
+function writeDataToFile(tShirts){
   const time = new Date();
   const year = time.getFullYear();
   const month = addZero(time.getMonth()+1);
@@ -121,6 +124,8 @@ function writeDataToFile(){
     console.log('file saved');
   });
 }
+
+// WRITE ERROR LOG =============================================================
 
 function writeErrorLog(errorMsg){
 
@@ -160,8 +165,8 @@ function addZero(date){
 // RUN APP =====================================================================
 function run(){
   checkDataDir();
-  scrapeSiteForPages();
-  // writeDataToFile();
+  scrapeSite();
+  // writeDataToFile(tShirts);
 }
 
 run();
