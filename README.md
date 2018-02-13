@@ -1,5 +1,5 @@
 # Content Scraper
-Project 6 in Team Treehouse's Full Stack JavaScript techdegree
+Project 6 in Team Treehouse's Full Stack JavaScript techdegree.
 
 ## Run application
 1. Clone or download project
